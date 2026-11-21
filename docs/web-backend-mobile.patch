@@ -1,0 +1,101 @@
+diff --git a/backend/src/app.ts b/backend/src/app.ts
+index 42fbc6f..74578be 100644
+--- a/backend/src/app.ts
++++ b/backend/src/app.ts
+@@ -8,6 +8,7 @@ import { pool } from "./core/db.js";
+ import { errorHandler, notFound } from "./core/http.js";
+ import { activityRouter } from "./modules/activity/router.js";
+ import { agentsRouter } from "./modules/agents/router.js";
++import { appVersionRouter } from "./modules/app/router.js";
+ import { auditsRouter } from "./modules/audits/router.js";
+ import { authRouter } from "./modules/auth/router.js";
+ import { clientsRouter } from "./modules/clients/router.js";
+@@ -41,6 +42,7 @@ export function createApp() {
+   const api = Router();
+   api.use("/auth", authRouter);
+   api.use("/public/leads", leadsPublicRouter);
++  api.use("/public/app-version", appVersionRouter);
+   api.use("/public/integrations", integrationsPublicRouter);
+ 
+   const secured = Router();
+diff --git a/backend/src/core/config.ts b/backend/src/core/config.ts
+index 67300d6..0a238a4 100644
+--- a/backend/src/core/config.ts
++++ b/backend/src/core/config.ts
+@@ -18,6 +18,11 @@ export const config = {
+   adminUsername: process.env.ADMIN_USERNAME ?? "admin",
+   adminPassword: process.env.ADMIN_PASSWORD ?? "admin123",
+   cookieSecure: process.env.COOKIE_SECURE === "true",
++  /** Mobile app versions for `GET /public/app-version`: below `min` the app blocks, below `latest` it suggests an update. */
++  mobile: {
++    android: { min: process.env.MOBILE_ANDROID_MIN ?? "1.0.0", latest: process.env.MOBILE_ANDROID_LATEST ?? "1.0.0" },
++    ios: { min: process.env.MOBILE_IOS_MIN ?? "1.0.0", latest: process.env.MOBILE_IOS_LATEST ?? "1.0.0" },
++  },
+ };
+ 
+ if (config.cookieSecure && (config.jwtSecret === DEV_SECRET || config.jwtSecret.length < 32)) {
+diff --git a/backend/src/modules/app/router.ts b/backend/src/modules/app/router.ts
+new file mode 100644
+index 0000000..799ecaf
+--- /dev/null
++++ b/backend/src/modules/app/router.ts
+@@ -0,0 +1,9 @@
++import { Router } from "express";
++import { config } from "../../core/config.js";
++
++/** Public: version gate read by the mobile app on start. */
++export const appVersionRouter = Router();
++
++appVersionRouter.get("/", (_req, res) => {
++  res.json(config.mobile);
++});
+diff --git a/backend/src/modules/auth/router.ts b/backend/src/modules/auth/router.ts
+index 798309d..0d4435f 100644
+--- a/backend/src/modules/auth/router.ts
++++ b/backend/src/modules/auth/router.ts
+@@ -1,4 +1,4 @@
+-import { Router, type Response } from "express";
++import { Router, type Request, type Response } from "express";
+ import bcrypt from "bcryptjs";
+ import { z } from "zod";
+ import { COOKIE, requireAuth, signToken } from "../../core/auth.js";
+@@ -19,14 +19,17 @@ const LOCK_MS = 15 * 60_000;
+ /** Failed logins per username+IP; in-memory is enough for a single API process. */
+ const fails = new Map<string, { count: number; until: number }>();
+ 
+-function setSession(res: Response, user: users.UserRow) {
+-  res.cookie(COOKIE, signToken({ id: user.id, username: user.username, role: user.role, v: user.token_version }), {
++/** Sets the session cookie; the native app (`X-Client: mobile`) has no cookie jar, so it also gets the same JWT in the body. */
++function setSession(req: Request, res: Response, user: users.UserRow): { token?: string } {
++  const token = signToken({ id: user.id, username: user.username, role: user.role, v: user.token_version });
++  res.cookie(COOKIE, token, {
+     httpOnly: true,
+     sameSite: "lax",
+     secure: config.cookieSecure,
+     maxAge: 7 * 24 * 3600 * 1000,
+     path: "/",
+   });
++  return req.get("x-client") === "mobile" ? { token } : {};
+ }
+ 
+ export const authRouter = Router();
+@@ -49,8 +52,7 @@ authRouter.post("/login", async (req, res) => {
+   fails.delete(key);
+   await users.touchLogin(user.id);
+   await log(pool, { actor_id: user.id, action: "auth.login", ip: ipOf(req), details: { agent: String(req.headers["user-agent"] ?? "").slice(0, 160) } });
+-  setSession(res, user);
+-  res.json({ user: users.toPublic(user) });
++  res.json({ user: users.toPublic(user), ...setSession(req, res, user) });
+ });
+ 
+ authRouter.post("/logout", (_req, res) => {
+@@ -84,8 +86,7 @@ authRouter.post("/me/password", requireAuth, async (req, res) => {
+     await log(db, { actor_id: u.id, action: "profile.password_changed", ip: ipOf(req) });
+     return u;
+   });
+-  setSession(res, user);
+-  res.json({ user: users.toPublic(user) });
++  res.json({ user: users.toPublic(user), ...setSession(req, res, user) });
+ });
+ 
+ authRouter.get("/me/activity", requireAuth, async (req, res) => {

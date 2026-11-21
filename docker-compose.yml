@@ -1,0 +1,45 @@
+# Local API for the mobile app (PostgreSQL + Express). The app reaches it at
+#   emulator: http://10.0.2.2:4000/api/v1 · phone on the same Wi-Fi: http://<LAN-IP>:4000/api/v1
+# Maestro runs on its own copy so tests never write into this database:
+#   API_PORT=4101 docker compose -p tradeflow-mobile-e2e up -d --build   (see docs/TESTING.md)
+name: tradeflow-mobile
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: tradeflow
+      POSTGRES_PASSWORD: tradeflow
+      POSTGRES_DB: tradeflow
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tradeflow"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgres://tradeflow:tradeflow@db:5432/tradeflow
+      JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-before-production}
+      CORS_ORIGIN: http://localhost:8081
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: admin123
+      SEED_DEMO: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${API_PORT:-4000}:4000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4000/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      # first start seeds a year of history before the API listens
+      start_period: 600s
+
+volumes:
+  db_data:

@@ -1,0 +1,26 @@
+# Upload only the Expo app to EAS Build.
+node_modules/
+.expo/
+dist/
+/android
+/ios
+backend/
+docs/
+.agents/
+.claude/
+.maestro/
+assets/landing/
+docker-compose*.yml
+Caddyfile
+skills-lock.json
+AGENTS.md
+CLAUDE.md
+.env
+.env.*
+!.env.example
+*.jks
+*.p8
+*.p12
+*.key
+*.pem
+.DS_Store

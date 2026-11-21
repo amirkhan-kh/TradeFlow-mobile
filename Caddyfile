@@ -1,0 +1,9 @@
+{$API_DOMAIN} {
+	encode zstd gzip
+	# Idle upstream sockets must close here before the backend's 65 s keep-alive does.
+	reverse_proxy backend:4000 {
+		transport http {
+			keepalive 30s
+		}
+	}
+}
