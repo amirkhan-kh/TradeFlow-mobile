@@ -5,7 +5,7 @@
 
 - [x] M0.0 Backend in this repo + mobile readiness: `backend/` copied with its structure from SRC (no `node_modules`), `docker-compose.yml` (db + backend, project `tradeflow-mobile`), `docker-compose.prod.yml` + `Caddyfile`, `.env.example`; `POST /auth/login` and `POST /auth/me/password` return `token` in the body for `X-Client: mobile` (cookie unchanged, web body unchanged); public `GET /public/app-version` from env `MOBILE_*` (`core/config.ts`, `modules/app/router.ts`).
   - handoff: `backend` typecheck green. In-process smoke (no DB): `GET /public/app-version` 200 + `MOBILE_ANDROID_MIN` override, bad Bearer → 401. Not run: login / password with a DB (`AUTH-M1`, `AUTH-M2` rows) — needs `docker compose up`. Unknown method on `/public/app-version` returns 401 (the secured router catches unmatched paths), not 404 — same as every other unknown path. Bearer + `token_version` revocation confirmed in `core/auth.ts`.
-- [~] M0.3 GitHub prep: `.gitignore` secrets audit, `README.md`, initial commit on `main` (no remote/`gh` yet — push is a follow-up).
+- [!] M0.3 GitHub prep: `.gitignore` secrets audit, `README.md`, initial commit on `main` (no remote/`gh` yet — push is a follow-up). Superseded — `origin/main` exists; clear leftover `[~]`.
 - [ ] WEB: mirror the mobile readiness change into the web repo backend — ready as `docs/web-backend-mobile.patch` (`git apply --check` clean against the web repo on 2026-11-06). User: `cd ~/Desktop/tradeflow && git apply ~/Desktop/tradeflow-mobile/docs/web-backend-mobile.patch`, commit, push, then on the VPS `git pull && docker compose -f docker-compose.prod.yml up -d --build`. The app also works before this: no body token → the native cookie jar keeps the session; `/public/*` 401s never sign out.
 - [ ] WEB: server-side scoping — couriers see every delivery, agents every order/client (the app only hides actions by role).
 - [x] M0.1 Bootstrap: docs, skills, contract, STACK lock, task queue.
@@ -20,6 +20,15 @@
 - [x] M1.5 Public part: welcome screen (hero, 3 points), demo sheet → `POST /public/leads`, language picker. Full landing sections not ported (mobile keeps one screen).
 - [x] M2.1–M2.8 Dashboard + insights, orders (list/detail/create/status/ship), clients (list/detail/create/edit/INN/payment links), deliveries, finance (list + payment sheet), stock (balances/history/moves), products, warehouses, audits (list/new/count/complete/approve), leads, agents, profile.
   - handoff 2026-11-06: `tsc` + `eslint` clean, `expo export` Android OK. Emulator (Expo Go, dev API on the web dev DB, no writes): every screen opened as admin; courier1 and auditor1 tabs + More checked; language switch and logout checked. agent1 not opened (emulator closed itself) — same screens as manager. Fixes: audit row overflow, tab order per role, dark status bar on login, `/public/*` 401 no longer signs out, welcome image moved to `assets/images` (`assets/landing/` is excluded from EAS upload), `eas.json` preview/production API + web URLs.
+- [x] M7.0 Shared Contabo API auth: web login `X-Client: mobile` → body `token` (+ optional `/public/app-version`); Contabo rebuild from **web** repo only. Mobile app `EXPO_PUBLIC_API_URL=https://api.13-140-202-159.sslip.io/api/v1`. Prompt: `docs/handoffs/mobile-parity-web-agents-prompt.md` (shared-server first).
+  - done 2026-11-27: web tip `5e207231` — auth body `token` + `GET /public/app-version`; Contabo rebuild healthy. Smoke: mobile login → token → Bearer `/auth/me` 200, `/agents/chat` 200 (audit), app-version 200.
+- [x] M7.2 Insights UI parity against Contabo `GET /insights`: Finding `key`+`action`, create_audit button, CTA to assistant. Do **not** redeploy Contabo from mobile `backend/`.
+  - done 2026-11-27: types + action button + Ochish-only + assistant CTA; Contabo Insights enriched; `npm run typecheck` green.
+- [x] M7.3 Assistant chat screen (web `/dashboard/assistant` parity) + nav/i18n; call Contabo `POST /agents/chat` (already live).
+  - done 2026-11-27: AssistantScreen + More/nav + dashboard/Insights CTA; `agent:"auto"`; typecheck green.
+- [x] M7.4 Smoke vs Contabo: chat ×5 200, no tool-name leak, Insights enriched, agent 403, create_audit 201/409. No reseed/`down -v`.
+  - done 2026-11-27: health 200; login token; chat stock/finance/sales/logistics/auto 200 no tool leak; insights 5 agents; create_audit 201 then 409; agent1 chat 403.
+- [ ] M7.1a (optional, local only) Sync mobile `backend/` from web SRC for local compose — never push that tree over Contabo.
 - [ ] M3.1 Maestro setup + matrix rows M1–M2, 3×3, loop to 100%.
 - [ ] M3.2 Performance + accessibility pass (`03-performance`, `fixing-accessibility`).
 - [ ] M4.1 Android release: icon, adaptive icon, splash, versioning, EAS preview APK, install check on 3 real Android phones (Android 10+).

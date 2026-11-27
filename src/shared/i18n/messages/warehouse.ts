@@ -18,6 +18,72 @@ export const warehouse = {
   "O'rta signallar": { ru: "Средние сигналы", en: "Medium signals", ky: "Орто сигналдар" },
   "Ma'lumot signallari": { ru: "Информационные сигналы", en: "Info signals", ky: "Маалымат сигналдары" },
   "Hammasi joyida — muammo topilmadi": { ru: "Всё в порядке — проблем не найдено", en: "All good — no issues found", ky: "Баары ордунда — көйгөй табылган жок" },
+  Ochish: { ru: "Открыть", en: "Open", ky: "Ачуу" },
+  "Ma'lumot olinmoqda…": { ru: "Данные загружаются…", en: "Fetching data…", ky: "Маалымат алынууда…" },
+  "TradeFlow agent suhbat": { ru: "Чат с агентом TradeFlow", en: "TradeFlow agent chat", ky: "TradeFlow агент баарлашуу" },
+  "Savolingizni yozing": { ru: "Напишите вопрос", en: "Type your question", ky: "Сурооңузду жазыңыз" },
+  "Yangi suhbat": { ru: "Новый чат", en: "New chat", ky: "Жаңы баарлашуу" },
+  "Agent bilan gaplashish": { ru: "Поговорить с агентом", en: "Chat with an agent", ky: "Агент менен сүйлөшүү" },
+  "Chat faqat savol-javob — amallar tugmalar orqali": {
+    ru: "Чат только для вопросов — действия через кнопки",
+    en: "Chat is Q&A only — use buttons for actions",
+    ky: "Чат суроо-жооп үчүн гана — аракеттер баскычтар аркылуу",
+  },
+  "Audit agenti": { ru: "Аудит-агент", en: "Audit agent", ky: "Аудит агенти" },
+  "Moliya agenti": { ru: "Финансовый агент", en: "Finance agent", ky: "Финансы агенти" },
+  "Ombor agenti": { ru: "Складской агент", en: "Stock agent", ky: "Кампа агенти" },
+  "Sotuv agenti": { ru: "Агент продаж", en: "Sales agent", ky: "Сатуу агенти" },
+  "Logistika agenti": { ru: "Логистический агент", en: "Logistics agent", ky: "Логистика агенти" },
+  "Inventarizatsiya jadvali, ochiq auditlar va kamomadlar": {
+    ru: "График инвентаризации, открытые аудиты и недостачи",
+    en: "Stock-take schedule, open audits and shortages",
+    ky: "Инвентаризация графиги, ачык аудиттер жана жетишсиздиктер",
+  },
+  "Debitorlik, kredit limiti va undirish": {
+    ru: "Дебиторка, кредитный лимит и взыскание",
+    en: "Receivables, credit limit and collection",
+    ky: "Дебитордук, кредит лимити жана өндүрүү",
+  },
+  "Tez va sekin tugaydigan zaxira, yaroqlilik muddati": {
+    ru: "Быстро и медленно расходуемый запас, срок годности",
+    en: "Fast- and slow-moving stock, expiry dates",
+    ky: "Тез жана жай түгөнүүчү запас, жарактуулук мөөнөтү",
+  },
+  "Reja bajarilishi va faol bo'lmagan mijozlar": {
+    ru: "Выполнение плана и неактивные клиенты",
+    en: "Plan pace and dormant clients",
+    ky: "План аткарылышы жана жигерсиз кардарлар",
+  },
+  "Yetkazish kechikishlari va muvaffaqiyatsiz yetkazishlar": {
+    ru: "Просрочки и неудачные доставки",
+    en: "Late and failed deliveries",
+    ky: "Кечиккен жана ийгиликсиз жеткирүүлөр",
+  },
+  "Qaysi omborlarda audit kechikkan?": {
+    ru: "На каких складах аудит просрочен?",
+    en: "Which warehouses are overdue for audit?",
+    ky: "Кайсы кампаларда аудит кечиккен?",
+  },
+  "Kredit limitidan oshgan mijozlar kimlar?": {
+    ru: "Кто превысил кредитный лимит?",
+    en: "Who exceeded their credit limit?",
+    ky: "Кредит лимитинен ашкан кардарлар кимдер?",
+  },
+  "Qaysi tovarlar tez tugaydi?": {
+    ru: "Какие товары скоро закончатся?",
+    en: "Which products will run out soon?",
+    ky: "Кайсы товарлар тез түгөнөт?",
+  },
+  "Qaysi agentlar rejadan ortda?": {
+    ru: "Кто из агентов отстаёт от плана?",
+    en: "Which agents are behind plan?",
+    ky: "Кайсы агенттер пландын артында?",
+  },
+  "Nechta yetkazish kechikmoqda?": {
+    ru: "Сколько доставок просрочено?",
+    en: "How many deliveries are late?",
+    ky: "Канча жеткирүү кечикүүдө?",
+  },
 
   // shared
   Nomi: { ru: "Название", en: "Name", ky: "Аталышы" },

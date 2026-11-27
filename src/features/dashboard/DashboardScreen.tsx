@@ -4,6 +4,7 @@ import { Pressable, View } from "react-native";
 import { useT } from "@/shared/i18n/I18nProvider";
 import { trData } from "@/shared/i18n/translate";
 import { fmtCompact, fmtCompactMoney, fmtDate, fmtMoney, fmtNum, pctChange } from "@/shared/lib/format";
+import { useMe } from "@/shared/lib/session";
 import { useApi } from "@/shared/lib/useApi";
 import { StatusBadge } from "@/shared/ui/Badge";
 import { Card, Divider, KpiCard, Progress, SectionTitle } from "@/shared/ui/Card";
@@ -11,6 +12,7 @@ import { ScrollScreen } from "@/shared/ui/Screen";
 import { ErrorState, Loading } from "@/shared/ui/States";
 import { Txt } from "@/shared/ui/Txt";
 import { colors } from "@/theme/tokens";
+import { canUseAssistant } from "../insights/agents";
 import type { InsightsData } from "../insights/types";
 import { DailyChart, PairBars, StatusPie } from "./Charts";
 
@@ -44,8 +46,10 @@ interface Dashboard {
 
 export function DashboardScreen() {
   const t = useT();
+  const me = useMe();
   const { data: d, error, loading, reload } = useApi<Dashboard>("/dashboard");
   const insights = useApi<InsightsData>("/insights");
+  const showAssistant = canUseAssistant(me.role);
 
   if (error && !d) return <ErrorState message={error} onRetry={reload} />;
   if (!d) return <Loading full />;
@@ -65,7 +69,7 @@ export function DashboardScreen() {
       }}
     >
       {signals > 0 && (
-        <Pressable accessibilityRole="button" onPress={() => router.push("/m/insights")} className="flex-row items-center gap-3 rounded-card bg-navy-700 p-4 active:opacity-90">
+        <Pressable accessibilityRole="button" onPress={() => router.push("/m/insights")} className="flex-row items-center gap-3 rounded-card bg-navy-700 p-4 active:opacity-90" testID="dash-insights-banner">
           <View className="size-10 items-center justify-center rounded-icon bg-white/15">
             <Sparkles size={20} color="#ffffff" />
           </View>
@@ -78,6 +82,20 @@ export function DashboardScreen() {
           <ChevronRight size={18} color="#ffffff" />
         </Pressable>
       )}
+      {showAssistant ? (
+        <Pressable accessibilityRole="button" onPress={() => router.push("/m/assistant")} className="flex-row items-center gap-3 rounded-card border border-ink-200 bg-white p-4 active:bg-ink-50" testID="dash-assistant-banner">
+          <View className="size-10 items-center justify-center rounded-icon bg-brand-50">
+            <Sparkles size={20} color={colors.brand[700]} />
+          </View>
+          <View className="flex-1">
+            <Txt weight="bold" className="text-sm">
+              {t("Agent bilan gaplashish")}
+            </Txt>
+            <Txt className="text-xs text-ink-500">{t("Savolingizni yozing")}</Txt>
+          </View>
+          <ChevronRight size={18} color={colors.ink[300]} />
+        </Pressable>
+      ) : null}
 
       <View className="gap-3">
         <View className="flex-row gap-3">

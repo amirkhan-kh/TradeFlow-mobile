@@ -1,17 +1,22 @@
 import { router } from "expo-router";
-import { ChevronRight, ClipboardCheck, HandCoins, Route, TrendingUp, Warehouse, type LucideIcon } from "lucide-react-native";
+import { ArrowUpRight, ClipboardCheck, HandCoins, MessageSquare, Route, TrendingUp, Warehouse, type LucideIcon } from "lucide-react-native";
+import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useT } from "@/shared/i18n/I18nProvider";
 import type { MsgKey } from "@/shared/i18n/messages";
+import { api, ApiError } from "@/shared/lib/api";
 import { fmtDate, fmtMoney } from "@/shared/lib/format";
+import { useMe } from "@/shared/lib/session";
 import { useApi } from "@/shared/lib/useApi";
+import { Button } from "@/shared/ui/Button";
 import { Card } from "@/shared/ui/Card";
 import { ScrollScreen } from "@/shared/ui/Screen";
-import { ErrorState, Loading } from "@/shared/ui/States";
+import { Alert, ErrorState, Loading } from "@/shared/ui/States";
 import { Txt } from "@/shared/ui/Txt";
 import { colors, gradients } from "@/theme/tokens";
-import type { InsightAgent, InsightsData, Severity } from "./types";
+import { canUseAssistant } from "./agents";
+import type { Finding, InsightAgent, InsightsData, Severity } from "./types";
 
 const ICONS: Record<InsightAgent["key"], LucideIcon> = { stock: Warehouse, finance: HandCoins, audit: ClipboardCheck, sales: TrendingUp, logistics: Route };
 
@@ -31,21 +36,58 @@ export function mobileHref(href: string): string {
   const screen = path.replace(/^\//, "") || "home";
   if (screen === "home") return "/home";
   if (screen === "finance") return "/finance";
+  if (screen === "assistant") return "/m/assistant";
   return `/m/${screen}${status ? `?status=${status}` : low ? "?low=true" : ""}`;
 }
 
 export function InsightsScreen() {
   const t = useT();
+  const me = useMe();
   const { data, error, loading, reload } = useApi<InsightsData>("/insights");
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const showAssistant = canUseAssistant(me.role);
+
   if (error && !data) return <ErrorState message={error} onRetry={reload} />;
   if (!data) return <Loading full />;
 
   const all = data.agents.flatMap((a) => a.findings);
   const count = (s: Severity) => all.filter((f) => f.severity === s).length;
 
+  async function runAction(f: Finding) {
+    if (!f.action || busyKey) return;
+    setActionError(null);
+    setBusyKey(f.key);
+    try {
+      const res = await api<{ href: string }>("/insights/actions", {
+        method: "POST",
+        json: {
+          agent: "audit",
+          type: f.action.type,
+          warehouse_id: f.action.warehouse_id,
+          auditor_id: f.action.auditor_id ?? null,
+        },
+      });
+      router.push(mobileHref(res.href) as never);
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : t("Xatolik yuz berdi"));
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
   return (
     <ScrollScreen refreshing={loading} onRefresh={reload}>
       <Txt className="text-sm text-ink-500">{t("Avtomatik tahlilchilar ombor, moliya, audit, sotuv va logistika ma'lumotlarini doimiy kuzatadi")}</Txt>
+
+      {showAssistant ? (
+        <Button icon={MessageSquare} onPress={() => router.push("/m/assistant")} testID="insights-assistant">
+          {t("Agent bilan gaplashish")}
+        </Button>
+      ) : null}
+
+      {actionError ? <Alert>{actionError}</Alert> : null}
+
       <LinearGradient colors={gradients.promo} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: 16, padding: 18 }}>
         <Txt className="text-sm text-brand-100">{t("Keyingi oy tushum prognozi")}</Txt>
         <Txt weight="extrabold" className="mt-1 text-2xl text-white">
@@ -91,21 +133,41 @@ export function InsightsScreen() {
               <Txt className="px-4 py-6 text-center text-sm text-ink-500">✓ {t("Hammasi joyida — muammo topilmadi")}</Txt>
             ) : (
               a.findings.map((f, i) => (
-                <Pressable key={i} onPress={() => router.push(mobileHref(f.href) as never)} className={`flex-row gap-3 px-4 py-3 active:bg-ink-50 ${i > 0 ? "border-t border-ink-100" : ""}`}>
-                  <View className="mt-1 h-8 w-1 rounded-full" style={{ backgroundColor: SEV[f.severity].bar }} />
-                  <View className="flex-1">
-                    <View className="flex-row items-start gap-2">
-                      <Txt weight="semibold" className="flex-1 text-sm">
-                        {f.title}
-                      </Txt>
-                      <Txt weight="bold" className={`text-[10px] ${SEV[f.severity].text}`}>
-                        {t(SEV[f.severity].label)}
-                      </Txt>
+                <View key={f.key} className={`gap-2 px-4 py-3 ${i > 0 ? "border-t border-ink-100" : ""}`}>
+                  <View className="flex-row gap-3">
+                    <View className="mt-1 h-8 w-1 rounded-full" style={{ backgroundColor: SEV[f.severity].bar }} />
+                    <View className="flex-1">
+                      <View className="flex-row items-start gap-2">
+                        <Txt weight="semibold" className="flex-1 text-sm">
+                          {f.title}
+                        </Txt>
+                        <Txt weight="bold" className={`text-[10px] ${SEV[f.severity].text}`}>
+                          {t(SEV[f.severity].label)}
+                        </Txt>
+                      </View>
+                      <Txt className="mt-0.5 text-xs text-ink-500">{f.detail}</Txt>
+                      <View className="mt-3">
+                        {f.action ? (
+                          <Button size="sm" loading={busyKey === f.key} disabled={!!busyKey} onPress={() => void runAction(f)} testID={`insight-action-${f.key}`}>
+                            {busyKey === f.key ? t("Yuklanmoqda…") : f.action.label}
+                          </Button>
+                        ) : (
+                          <Pressable
+                            accessibilityRole="button"
+                            onPress={() => router.push(mobileHref(f.href) as never)}
+                            className="flex-row items-center gap-1 self-start active:opacity-70"
+                            testID={`insight-open-${f.key}`}
+                          >
+                            <Txt weight="bold" className="text-xs text-brand-700">
+                              {t("Ochish")}
+                            </Txt>
+                            <ArrowUpRight size={14} color={colors.brand[700]} />
+                          </Pressable>
+                        )}
+                      </View>
                     </View>
-                    <Txt className="mt-0.5 text-xs text-ink-500">{f.detail}</Txt>
                   </View>
-                  <ChevronRight size={16} color={colors.ink[300]} />
-                </Pressable>
+                </View>
               ))
             )}
           </Card>

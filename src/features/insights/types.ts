@@ -1,10 +1,19 @@
 export type Severity = "high" | "medium" | "low";
 
+export interface InsightAction {
+  type: "create_audit";
+  label: string;
+  warehouse_id: number;
+  auditor_id?: number | null;
+}
+
 export interface Finding {
+  key: string;
   severity: Severity;
   title: string;
   detail: string;
   href: string;
+  action: InsightAction | null;
 }
 
 export interface InsightAgent {

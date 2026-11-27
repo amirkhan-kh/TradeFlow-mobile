@@ -5,6 +5,7 @@ import { ClientsList } from "@/features/clients/ClientsList";
 import { DashboardScreen } from "@/features/dashboard/DashboardScreen";
 import { DeliveriesList } from "@/features/deliveries/DeliveriesList";
 import { FinanceList } from "@/features/finance/FinanceList";
+import { AssistantScreen } from "@/features/insights/AssistantScreen";
 import { InsightsScreen } from "@/features/insights/InsightsScreen";
 import { LeadsList } from "@/features/leads/LeadsList";
 import { OrdersList } from "@/features/orders/OrdersList";
@@ -34,6 +35,7 @@ export default function MoreRoute() {
     warehouses: <WarehousesList />,
     agents: <AgentsScreen />,
     insights: <InsightsScreen />,
+    assistant: <AssistantScreen />,
     leads: <LeadsList />,
   }[screen];
 

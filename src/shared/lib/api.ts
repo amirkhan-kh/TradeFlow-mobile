@@ -27,8 +27,8 @@ export const setUnauthorizedHandler = (fn: (() => void) | null) => {
   onUnauthorized = fn;
 };
 
-export async function api<T>(path: string, init: RequestInit & { json?: unknown } = {}): Promise<T> {
-  const { json, headers: extraHeaders, ...rest } = init;
+export async function api<T>(path: string, init: RequestInit & { json?: unknown; timeoutMs?: number } = {}): Promise<T> {
+  const { json, headers: extraHeaders, timeoutMs, ...rest } = init;
   const headers: Record<string, string> = { "x-lang": activeLang(), "x-client": "mobile", accept: "application/json" };
   const token = getToken();
   if (token) headers.authorization = `Bearer ${token}`;
@@ -37,10 +37,12 @@ export async function api<T>(path: string, init: RequestInit & { json?: unknown 
 
   const ctrl = new AbortController();
   let timedOut = false;
+  // Agent chat can take multiple Gemini tool rounds on Contabo.
+  const waitMs = timeoutMs ?? (path.startsWith("/agents/chat") ? 90_000 : TIMEOUT_MS);
   const timer = setTimeout(() => {
     timedOut = true;
     ctrl.abort();
-  }, TIMEOUT_MS);
+  }, waitMs);
   rest.signal?.addEventListener("abort", () => ctrl.abort());
 
   let res: Response;

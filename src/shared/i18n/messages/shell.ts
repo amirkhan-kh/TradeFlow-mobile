@@ -15,6 +15,7 @@ export const shell = {
   },
   Dashboard: { ru: "Дашборд", en: "Dashboard", ky: "Дашборд", cy: "Дашборд" },
   "Aqlli agentlar": { ru: "Умные агенты", en: "Smart agents", ky: "Акылдуу агенттер" },
+  "Agent suhbat": { ru: "Чат с агентом", en: "Agent chat", ky: "Агент баарлашуу" },
   Buyurtmalar: { ru: "Заказы", en: "Orders", ky: "Буйрутмалар" },
   Mijozlar: { ru: "Клиенты", en: "Clients", ky: "Кардарлар" },
   "Savdo jamoasi": { ru: "Торговая команда", en: "Sales team", ky: "Соода командасы" },
